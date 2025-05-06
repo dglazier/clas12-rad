@@ -15,19 +15,19 @@ Goals :
 To install just download the code from git and add the path to ROOT_INCLUDE_PATH
 If you do not have the base rad code already installed you can add it as a submodule
 
-      git clone --recurse-submodules https://github.com/dglazier/epic-rad.git
-      setenv EPICRAD /to/where/is/epic-rad
+      git clone --recurse-submodules https://github.com/dglazier/clas12-rad.git
+      setenv CLAS12RAD /to/where/is/clas12-rad
       setenv RAD ${EPICRAD}/rad
 
 If RAD is installed already you do not need to download the submodule
 
       git clone https://github.com/dglazier/epic-rad.git
-      setenv EPICRAD /to/where/is/epic-rad
+      setenv CLAS12RAD /to/where/is/clas12-rad
       setenv RAD /to/where/is/rad
 
 In either case you then need to add the include path to ROOT_INCLUDE_PATH so the files are visibel in an interactive root session.
 
-      setenv ROOT_INCLUDE_PATH ${RAD}/include:${EPICRAD}/include
+      setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include
       or
       setenv ROOT_INCLUDE_PATH ${ROOT_INCLUDE_PATH}:${RAD}/include:${EPICRAD}/include
       
