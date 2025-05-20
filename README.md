@@ -17,7 +17,7 @@ If you do not have the base rad code already installed you can add it as a submo
 
       git clone --recurse-submodules https://github.com/dglazier/clas12-rad.git
       setenv CLAS12RAD /to/where/is/clas12-rad
-      setenv RAD ${EPICRAD}/rad
+      setenv RAD ${CLAS12RAD}/rad
 
 If RAD is installed already you do not need to download the submodule
 
@@ -33,74 +33,62 @@ In either case you then need to add the include path to ROOT_INCLUDE_PATH so the
       
   Example code :
 
-        // create an epic reaction
-        rad::config::ePICReaction epic{"events", "data_file.root");
-        //choose processing scheme i.e. match reconstructed and generated events
-        epic.AliasColumnsAndMatchWithMC(false);
+        // create an clas12 reaction
+ 	rad::clas12::CLAS12Reaction c12{files};	
+	//choose processing scheme i.e. match reconstructed and generated events
+        c12.AliasColumnsAndMatchWithMC();
+	//Set beam and target energy
+	c12.FixBeamElectronMomentum(0,0,10.4); //default e- mass
+  	c12.FixBeamIonMomentum(0,0,0); //default p mass
         //Assign particles names and indices
         //indicing comes from ordering in hepmc file as we matched Sim and Rec.
-        epic.setBeamIonIndex(rad::beams::BeamEleFix());
-        epic.setBeamElectronIndex(rad::beams::BeamIonFix());
-        epic.setScatElectronIndex(1);
-        //give final state hadrons names,
+
+	//give final state hadrons names,
+	//note ScatElectron name is "scat_ele"
         //if we give a PDG code it will generate el_OK branches etc
-        //el_OK = 1 if electron reconstructed with right PDG
-        epic.setParticleIndex("el",6,11);
-        epic.setParticleIndex("po",7,-11);
-        epic.setParticleIndex("p",5,2212);
-        
+        //scat_ele_OK = 1 if electron reconstructed with right PDG
+	c12.setScatElectronIndex(rad::indice::useNthOccurance(1,11),{pidtype});//n=1, pid == 11
+  	c12.setParticleIndex("pip",rad::indice::useNthOccurance(1,211),{pidtype},211);
+ 	c12.setParticleIndex("pim",rad::indice::useNthOccurance(1,-211),{pidtype},-211);
+ 	c12.setParticleIndex("proton",rad::indice::useNthOccurance(1,2212),{pidtype},2212);
+         
         //Group particles into top and bottom vertices
         //aka Meson and Baryon components
         //this is required for calcualting reaction kinematics
         //e.g. t distributions
-        epic.setBaryonParticles({"p"});
-        epic.setMesonParticles({"el","po"});
+    	c12.setBaryonParticles({"proton"}); //recoil proton
+ 	c12.setMesonParticles({"pip","pim"}); //intermediate meson
 
         //must call this after all particles are configured
-        epic.makeParticleMap();
-
-        //create column for invariant mass of e+ and e-
-        rad::rdf::Mass(epic,"IMass","{el,po}");
+ 	c12.makeParticleMap();
+	
+        //create column for invariant mass of pi+ and pi-
+        rad::rdf::Mass(c12,"IMass","{pip,pim}");
 
         // we can now add further columns, make a snapshot or draw a histogram
         // draw a histogram. Not I must prepend rec_ or tru_ to get the reconstructed or truth variable
-        auto df0 = epic.CurrFrame(); //get the current dataframe node. Now operate like regular RDataFrame
-        auto hInvMassRec = df0.Histo1D({"InvMassRec","Recon M(e-,e+) [GeV]",100,.3,5.},"rec_IMass");
-        auto hInvMassTru = df0.Histo1D({"InvMassTru","Truth M(e-,e+) [GeV]",100,.3,5.},"tru_IMass");
+        auto df0 = c12.CurrFrame(); //get the current dataframe node. Now operate like regular RDataFrame
+        auto hInvMassRec = df0.Histo1D({"InvMassRec","Recon M(#pi-,#pi+) [GeV]",100,.3,2.},"rec_IMass");
+        auto hInvMassTru = df0.Histo1D({"InvMassTru","Truth M(#pi-,#pi+) [GeV]",100,.3,2.},"tru_IMass");
         hInvMassRec->DrawCopy();
         hInvMassTrue->DrawCopy("same");
 
+	//or save all columns to a root tree file
+	c12.Snapshot("tree.root");
+
+
 The matching generated with reconstructed is the simplest analysis for simulated data. However to be more 
 realistic you need to add algorithms for choosing which particle is associated with your defined final state particles.
-Some examples of this are given in the examples! e.g. choose the first electron in ReconstructedParticles for the scattered electron, 
-or choose the electron with the highest momentum. Ultimately this will require full combinitiral analysis to be implemented.
+e.g. choose the first electron in ReconstructedParticles for the scattered electron, 
+or choose the electron with the highest momentum. Ultimately this will require full combinitorial analysis to be implemented.
 
-To find the mcmatch index, you need to know the order of the particles in the hepmc3 file. This can be found by checking the MCParticles branch in the reconstructed tree. Open the file in root and get events tree,
+Note some helpful branches are added : rec_pmag , rec_theta and rec_phi and if truth matching is on the same with tru_ and res_, where the latter give the difference between rec and tru.
 
-      events->Scan("MCParticles.PDG:MCParticles.generatorStatus")
+If you snapshot a tree you can access particular particle elements using their name.
+e.g
 
-      ***********************************************
-      *    Row   * Instance * MCParticl * MCParticl *
-      ***********************************************
-      *        0 *        0 *        11 *         4 *
-      *        0 *        1 *      2212 *         4 *
-      *        0 *        2 *        11 *         1 *
-      *        0 *        3 *       -11 *         1 *
-      *        0 *        4 *       211 *         1 *
-      *        0 *        5 *      2112 *         1 *
-      *        0 *        6 *        11 *         1 *
-      *        0 *        7 *        11 *         0 *
-      *        0 *        8 *        22 *         0 *
-      *        0 *        9 *        11 *         0 *
-      *        0 *       10 *        11 *         0 *
-      *        0 *       11 *        22 *         0 *
-      *        0 *       12 *        22 *         0 *
-      *        0 *       13 *        22 *         0 *
-
-
-The particles with generatorStatus = 4 are the beams. generatorStatus=1 are the final state particles which have been thrown in genat4. generatorStatus=0 are secondaries which should be ignored. You can match the Status=1 PDG values with the particles in your reaction.
-
-
+      rad_tree->Draw("rec_pmag[scat_ele]");
+      rad_tree->Draw("rec_theta[pip]");
 
 ## Developing your own column calculations
 
@@ -108,7 +96,7 @@ To create the user-friendly function rad::rdf::Mass etc, requires 2 steps. Curre
 One for the raw C++ calculation, the other to interface this to RDataFrame via a Define call. When developing your own 
 calculations you should try and group them in physics processes, for example a file for compton scattering kinematic calculations.
 Lets look at an example, MissMass : given some final state particles, these are subtracted from the sum of the beams and the 
-resulting mass is returned. First I must define the c++ function (see include/ReactionKinematics.h),
+resulting mass is returned. First I must define the c++ function (see rad/include/ReactionKinematics.h),
 
     template<typename Tp, typename Tm>
     Tp MissMass(const config::RVecIndexMap& react,const RVecI &ineg,const RVec<Tp> &px, const RVec<Tp> &py, const RVec<Tp> &pz, const RVec<Tm> &m)
@@ -160,21 +148,4 @@ Then the tree will contain all aliased or nnewly defined columns. In particular 
 
 
 ## Matching detector information
-
-For ePIC analysis we can match the detector information to each particle.
-To do this you must use the ePICDetectorReaction rather than just ePICReaction.
-To specify what information you want to use (for example to save linked info synchronised to tree) :
-
-       //Add some detector associations
-       //From TaggerTrackerTracks use "momentum.x"
-       epic.AssociateTracks({"TaggerTrackerTracks"},
-   		       {"momentum.x"});
-       //From various calorimeters use "energy"	       
-       epic.AssociateClusters({"EcalBarrelClusters","EcalBarrelImagingClusters",
-       	"EcalBarrelScFiClusters",
-      	"EcalEndcapNClusters","EcalEndcapPClusters","EcalEndcapPInsertClusters",
-      	"HcalBarrelClusters","HcalEndcapNClusters","LFHCALClusters",
-      	"EcalFarForwardZDCClusters","HcalFarForwardZDCClusters"},
-    	{"energy"});
- 
 
