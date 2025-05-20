@@ -4,7 +4,31 @@
 
 namespace rad{
   namespace clas12 {
-
+    /**
+     * Rearrange vec in order of its own elements, with additional size for missing elements
+     * missing elements will have index -1 and users will have to deal with this 
+     * in subsequent functions
+     * e.g. [1,3,2,0,0] , 6 -> [[3,4],[0],[2],[1],[],[]]
+     */
+    //detector matrix [det][subdet][layer]
+    using detector_matrix_t = ROOT::VecOps::RVec<ROOT::VecOps::RVec<short>>;
+    template<typename T,typename Tn>
+     detector_matrix_t ReverseIndexN(const ROOT::VecOps::RVec<short>& vec,Tn nentries){
+      //std::cout<<"ReverseIndexN "<< vec <<" "<<vec.size()<<" "<<nentries<<std::endl;
+      if(nentries==0)return detector_matrix_t();
+      if( nentries<vec.size() ) nentries = vec.size() ;//no procedure for choosing what to remove
+      detector_matrix_t  result(nentries);//unfilled elements will be = -1
+      //std::cout<<"done init"<<std::endl;
+      T entry = 0;
+      for(auto idx:vec){
+	//	result[idx] = entry;
+	result[idx].push_back(entry);
+	++entry;
+      }
+      // std::cout<<result<<std::endl;
+      return result;
+    }
+    
     ///////////////////////////////////////////////////////
     constexpr double PdgToMass(int pdg){
 
