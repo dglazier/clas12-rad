@@ -12,7 +12,19 @@ Goals :
 6. Automate MC matching and calculation of equivalent truth variables.
 7. Automate combinitorial analysis (!!! To be done)
 
-To install just download the code from git and add the path to ROOT_INCLUDE_PATH
+To run on ifarm it is simplest to use my build
+
+      module use /scigroup/cvmfs/hallb/clas12/sw/modulefiles
+      module load clas12
+      module unload hipo/4.2.0
+
+      setenv CLAS12RAD /work/clas12/dglazier/clas12-rad
+      setenv RAD ${CLAS12RAD}/rad
+      setenv HIPO ${CLAS12RAD}/hipo/install
+      setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include:${HIPO}/include
+      setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${HIPO}/lib
+
+To install on laptop etc, just download the code from git and add the path to ROOT_INCLUDE_PATH
 If you do not have the base rad code already installed you can add it via a submodule
 
       git clone --recurse-submodules https://github.com/dglazier/clas12-rad.git
@@ -38,7 +50,12 @@ In either case you then need to add the include path to ROOT_INCLUDE_PATH so the
 
       setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include:${HIPO}/include
       or
-      setenv ROOT_INCLUDE_PATH ${ROOT_INCLUDE_PATH}:${RAD}/include:${CLAS12RAD}/include
+      setenv ROOT_INCLUDE_PATH ${ROOT_INCLUDE_PATH}:${RAD}/include:${CLAS12RAD}/include:${HIPO}/include
+
+And the hipo libdir
+
+      setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${HIPO}/lib
+
       
   Example code :
 
