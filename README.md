@@ -13,7 +13,7 @@ Goals :
 7. Automate combinitorial analysis (!!! To be done)
 
 To install just download the code from git and add the path to ROOT_INCLUDE_PATH
-If you do not have the base rad code already installed you can add it as a submodule
+If you do not have the base rad code already installed you can add it via a submodule
 
       git clone --recurse-submodules https://github.com/dglazier/clas12-rad.git
       setenv CLAS12RAD /to/where/is/clas12-rad
@@ -25,11 +25,20 @@ If RAD is installed already you do not need to download the submodule
       setenv CLAS12RAD /to/where/is/clas12-rad
       setenv RAD /to/where/is/rad
 
-In either case you then need to add the include path to ROOT_INCLUDE_PATH so the files are visibel in an interactive root session.
+We also need access to the hipo4 library. A submodule has also been added for this in case you do not already have access. In principle the hipo aspects should already be availbale on ifarm.
 
-      setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include
+To build hipo see
+
+https://github.com/gavalian/hipo?tab=readme-ov-file#installing-the-package-c
+
+      setenv HIPO ${CLAS12RAD}/hipo/install
+
+
+In either case you then need to add the include path to ROOT_INCLUDE_PATH so the files are visible in an interactive root session.
+
+      setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include:${HIPO}/include
       or
-      setenv ROOT_INCLUDE_PATH ${ROOT_INCLUDE_PATH}:${RAD}/include:${EPICRAD}/include
+      setenv ROOT_INCLUDE_PATH ${ROOT_INCLUDE_PATH}:${RAD}/include:${CLAS12RAD}/include
       
   Example code :
 

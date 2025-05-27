@@ -1,3 +1,6 @@
 [submodule "rad"]
 	path = rad
 	url = https://github.com/dglazier/rad.git
+[submodule "hipo"]
+	path = hipo
+	url = https://github.com/gavalian/hipo
