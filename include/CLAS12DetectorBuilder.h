@@ -34,13 +34,14 @@ namespace clas12 {
     // CLASS DECLARATION
     // =================================================================================
 
+    template<typename DS_t = RHipoDS>
     class CLAS12DetectorBuilder {
     public:
         /**
          * @brief Constructor.
          * @param rxn Reference to the main CLAS12Reaction object.
          */
-        explicit CLAS12DetectorBuilder(CLAS12Reaction& rxn);
+        explicit CLAS12DetectorBuilder(CLAS12Reaction<DS_t>& rxn);
 
         // --- High-Level Builders ---
 
@@ -73,7 +74,7 @@ namespace clas12 {
         void BuildCovMatrix();
 
     private:
-        CLAS12Reaction& _rxn;
+        CLAS12Reaction<DS_t>& _rxn;
         clas12::DetId2Name _detectorNames;
 
         /** @brief Safely registers a column association without throwing on re-definitions. */
@@ -99,9 +100,11 @@ namespace clas12 {
 namespace rad {
 namespace clas12 {
 
-    inline CLAS12DetectorBuilder::CLAS12DetectorBuilder(CLAS12Reaction& rxn) : _rxn(rxn) {}
+    template<typename DS_t>
+    inline CLAS12DetectorBuilder<DS_t>::CLAS12DetectorBuilder(CLAS12Reaction<DS_t>& rxn) : _rxn(rxn) {}
 
-    inline void CLAS12DetectorBuilder::BuildAll() {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildAll() {
         BuildEventBanks();
         BuildCovMatrix();
         
@@ -132,7 +135,9 @@ namespace clas12 {
         // 3. Build compound physics abstractions
         BuildRegions(); 
     }
-inline void CLAS12DetectorBuilder::BuildRegions() {
+
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildRegions() {
         std::string rec = rad::consts::data_type::Rec();
         std::string dnw = rad::DoNotWriteTag();
 
@@ -265,175 +270,177 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
             for (const auto& v : vars) AutoMapSimple(reg, v); 
         }
     }
-/*     inline void CLAS12DetectorBuilder::BuildRegions() { */
-/*         std::string rec = rad::consts::data_type::Rec(); */
-/*         std::string dnw = rad::DoNotWriteTag(); */
+/* template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildRegions() { */
+/* std::string rec = rad::consts::data_type::Rec(); */
+/* std::string dnw = rad::DoNotWriteTag(); */
 
-/*         // Dynamically resolve names */
-/*         std::string ecal = _detectorNames.DetName(clas12::ECAL); */
-/*         std::string ftof = _detectorNames.DetName(clas12::FTOF); */
-/*         std::string cnd  = _detectorNames.DetName(clas12::CND); */
-/*         std::string ctof = _detectorNames.DetName(clas12::CTOF); */
-/*         std::string ftcal = _detectorNames.DetName(clas12::FTCAL); */
-/*         std::string fthodo = _detectorNames.DetName(clas12::FTHODO); */
-/*         std::string trkName = _detectorNames.DetName(clas12::DC); */
-/*         std::string band = _detectorNames.DetName(clas12::BAND); */
+/* // Dynamically resolve names */
+/* std::string ecal = _detectorNames.DetName(clas12::ECAL); */
+/* std::string ftof = _detectorNames.DetName(clas12::FTOF); */
+/* std::string cnd  = _detectorNames.DetName(clas12::CND); */
+/* std::string ctof = _detectorNames.DetName(clas12::CTOF); */
+/* std::string ftcal = _detectorNames.DetName(clas12::FTCAL); */
+/* std::string fthodo = _detectorNames.DetName(clas12::FTHODO); */
+/* std::string trkName = _detectorNames.DetName(clas12::DC); */
+/* std::string band = _detectorNames.DetName(clas12::BAND); */
 
-/*         // --- FORWARD DETECTOR (FD) --- */
-/*         if (!_rxn.ColumnExists(rec + "FD_DetEnergy")) { */
+/* // --- FORWARD DETECTOR (FD) --- */
+/* if (!_rxn.ColumnExists(rec + "FD_DetEnergy")) { */
             
-/*             // Energy Sums */
-/*             _rxn.Define(rec + "FD_DetEnergy",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::SumValid", rec, ecal, "energy",  */
-/*                     info::DetectorLayers().at(clas12::ECAL))); // Automatically uses PCAL, ECIN, ECOUT */
+/* // Energy Sums */
+/* _rxn.Define(rec + "FD_DetEnergy",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::SumValid", rec, ecal, "energy",  */
+/* info::DetectorLayers().at(clas12::ECAL))); // Automatically uses PCAL, ECIN, ECOUT */
 
-/*             _rxn.Define(rec + "FD_DeltaEnergy",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "energy",  */
-/*                     {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); // Custom order */
+/* _rxn.Define(rec + "FD_DeltaEnergy",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "energy",  */
+/* {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); // Custom order */
             
-/*             // Timing (Fallback arrays) */
-/*             std::string tFtof = rec + "FTOF_time_best" + dnw; */
-/*             std::string tEcal = rec + "ECAL_time_best" + dnw; */
+/* // Timing (Fallback arrays) */
+/* std::string tFtof = rec + "FTOF_time_best" + dnw; */
+/* std::string tEcal = rec + "ECAL_time_best" + dnw; */
 
-/*             _rxn.Define(tFtof, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "time",  */
-/*                                {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); */
-/*             _rxn.Define(tEcal, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ecal, "time",  */
-/*                                {clas12::PCAL, clas12::ECOUT, clas12::ECIN})); */
+/* _rxn.Define(tFtof, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "time",  */
+/* {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); */
+/* _rxn.Define(tEcal, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ecal, "time",  */
+/* {clas12::PCAL, clas12::ECOUT, clas12::ECIN})); */
 
-/*             // FIX: Mirror clas12root exactly - Charge != 0 uses FTOF, else ECAL */
-/*             _rxn.Define(rec + "FD_Time",  */
-/*                 [](const rad::RVecResultType& tof, const rad::RVecResultType& cal, const rad::Indices_t& pids) { */
-/*                     rad::RVecResultType res(tof.size(), 0.0); */
-/*                     for (size_t i = 0; i < tof.size(); ++i) { */
-/*                         // Check if particle is neutral (Gamma, Neutron, Pi0, Unknown) */
-/*                         bool isNeutral = (pids[i] == 22 || pids[i] == 2112 || pids[i] == 111 || pids[i] == 0); */
-/*                         if (!isNeutral && tof[i] > 0.0) res[i] = tof[i]; */
-/*                         else                            res[i] = cal[i]; */
-/*                     } */
-/*                     return res; */
-/*                 }, {tFtof, tEcal, rec + "pid"} */
-/*             ); */
+/* // FIX: Mirror clas12root exactly - Charge != 0 uses FTOF, else ECAL */
+/* _rxn.Define(rec + "FD_Time",  */
+/* [](const rad::RVecResultType& tof, const rad::RVecResultType& cal, const rad::Indices_t& pids) { */
+/* rad::RVecResultType res(tof.size(), 0.0); */
+/* for (size_t i = 0; i < tof.size(); ++i) { */
+/* // Check if particle is neutral (Gamma, Neutron, Pi0, Unknown) */
+/* bool isNeutral = (pids[i] == 22 || pids[i] == 2112 || pids[i] == 111 || pids[i] == 0); */
+/* if (!isNeutral && tof[i] > 0.0) res[i] = tof[i]; */
+/* else                            res[i] = cal[i]; */
+/* } */
+/* return res; */
+/* }, {tFtof, tEcal, rec + "pid"} */
+/* ); */
 
-/*             // Path  */
-/*             std::string pFtof = rec + "FTOF_path_best" + dnw; */
-/*             std::string pEcal = rec + "ECAL_path_best" + dnw; */
+/* // Path  */
+/* std::string pFtof = rec + "FTOF_path_best" + dnw; */
+/* std::string pEcal = rec + "ECAL_path_best" + dnw; */
 
-/*             _rxn.Define(pFtof, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "path",  */
-/*                                {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); */
-/*             _rxn.Define(pEcal, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ecal, "path",  */
-/*                                {clas12::PCAL, clas12::ECOUT, clas12::ECIN})); */
+/* _rxn.Define(pFtof, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ftof, "path",  */
+/* {clas12::FTOF1B, clas12::FTOF1A, clas12::FTOF2})); */
+/* _rxn.Define(pEcal, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, ecal, "path",  */
+/* {clas12::PCAL, clas12::ECOUT, clas12::ECIN})); */
 
-/*             // FIX: Mirror clas12root exactly - Charge != 0 uses FTOF, else ECAL */
-/*             _rxn.Define(rec + "FD_Path",  */
-/*                 [](const rad::RVecResultType& pTof, const rad::RVecResultType& pCal, const rad::Indices_t& pids) { */
-/*                     rad::RVecResultType res(pTof.size(), 0.0); */
-/*                     for (size_t i = 0; i < pTof.size(); ++i) { */
-/*                         bool isNeutral = (pids[i] == 22 || pids[i] == 2112 || pids[i] == 111 || pids[i] == 0); */
-/*                         if (!isNeutral && pTof[i] > 0.0) res[i] = pTof[i]; */
-/*                         else                             res[i] = pCal[i]; */
-/*                     } */
-/*                     return res; */
-/*                 }, {pFtof, pEcal, rec + "pid"} */
-/*             ); */
+/* // FIX: Mirror clas12root exactly - Charge != 0 uses FTOF, else ECAL */
+/* _rxn.Define(rec + "FD_Path",  */
+/* [](const rad::RVecResultType& pTof, const rad::RVecResultType& pCal, const rad::Indices_t& pids) { */
+/* rad::RVecResultType res(pTof.size(), 0.0); */
+/* for (size_t i = 0; i < pTof.size(); ++i) { */
+/* bool isNeutral = (pids[i] == 22 || pids[i] == 2112 || pids[i] == 111 || pids[i] == 0); */
+/* if (!isNeutral && pTof[i] > 0.0) res[i] = pTof[i]; */
+/* else                             res[i] = pCal[i]; */
+/* } */
+/* return res; */
+/* }, {pFtof, pEcal, rec + "pid"} */
+/* ); */
 
-/*             // Sector */
-/*             _rxn.Define(rec + "FD_Sector", util::BuildFunctionString("rad::clas12::util::Fallback",  */
-/*                 {rec + trkName + "_sector", util::ColName(rec, ftof, "sector", clas12::FTOF1B), util::ColName(rec, ecal, "sector", clas12::PCAL)})); */
-/*         } */
+/* // Sector */
+/* _rxn.Define(rec + "FD_Sector", util::BuildFunctionString("rad::clas12::util::Fallback",  */
+/* {rec + trkName + "_sector", util::ColName(rec, ftof, "sector", clas12::FTOF1B), util::ColName(rec, ecal, "sector", clas12::PCAL)})); */
+/* } */
 
-/*         // --- CENTRAL DETECTOR (CD) --- */
-/*         if (!_rxn.ColumnExists(rec + "CD_DetEnergy")) { */
+/* // --- CENTRAL DETECTOR (CD) --- */
+/* if (!_rxn.ColumnExists(rec + "CD_DetEnergy")) { */
             
-/*             _rxn.Define(rec + "CD_DetEnergy",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::SumValid", rec, cnd, "energy",  */
-/*                     info::DetectorLayers().at(clas12::CND))); */
+/* _rxn.Define(rec + "CD_DetEnergy",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::SumValid", rec, cnd, "energy",  */
+/* info::DetectorLayers().at(clas12::CND))); */
 
-/*             _rxn.Define(rec + "CD_DeltaEnergy", rec + ctof + "_energy"); */
+/* _rxn.Define(rec + "CD_DeltaEnergy", rec + ctof + "_energy"); */
             
-/*             // Timing */
-/*             std::string tCnd = rec + "CND_time_best" + dnw; */
-/*             _rxn.Define(tCnd, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, cnd, "time",  */
-/*                               info::DetectorLayers().at(clas12::CND))); */
+/* // Timing */
+/* std::string tCnd = rec + "CND_time_best" + dnw; */
+/* _rxn.Define(tCnd, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, cnd, "time",  */
+/* info::DetectorLayers().at(clas12::CND))); */
             
-/*             /\* _rxn.Define(rec + "CD_Time", util::BuildFunctionString("rad::clas12::util::Fallback",  *\/ */
-/*             /\*                              {rec + ctof + "_time", tCnd})); *\/ */
+/* /\* _rxn.Define(rec + "CD_Time", util::BuildFunctionString("rad::clas12::util::Fallback",  *\/ */
+/* /\* {rec + ctof + "_time", tCnd})); *\/ */
 /* // FIX: Debug-enabled CD_Time evaluator */
-/*             _rxn.Define(rec + "CD_Time",  */
-/*                 [](const rad::RVecResultType& tCtof, const rad::RVecResultType& tCnd, const rad::Indices_t& pids) { */
-/*                     rad::RVecResultType res(tCtof.size(), 0.0); */
+/* _rxn.Define(rec + "CD_Time",  */
+/* [](const rad::RVecResultType& tCtof, const rad::RVecResultType& tCnd, const rad::Indices_t& pids) { */
+/* rad::RVecResultType res(tCtof.size(), 0.0); */
                     
-/*                     // --- SAFE DEBUG OUTPUT --- */
-/*                     static std::atomic<int> debug_calls{0}; */
-/*                     bool do_debug = false; */
-/*                     if (debug_calls < 20) {  */
-/*                         do_debug = true; */
-/*                         debug_calls++; */
-/*                         std::cout << "\n[DEBUG] CD_Time Evaluator | N_Tracks: " << tCtof.size() << "\n"; */
-/*                     } */
+/* // --- SAFE DEBUG OUTPUT --- */
+/* static std::atomic<int> debug_calls{0}; */
+/* bool do_debug = false; */
+/* if (debug_calls < 20) {  */
+/* do_debug = true; */
+/* debug_calls++; */
+/* std::cout << "\n[DEBUG] CD_Time Evaluator | N_Tracks: " << tCtof.size() << "\n"; */
+/* } */
 
-/*                     for (size_t i = 0; i < tCtof.size(); ++i) { */
-/*                         // CD Logic: Prefer CTOF, fallback to CND */
-/*                         if (tCtof[i] != 0.0) res[i] = tCtof[i]; */
-/*                         else                 res[i] = tCnd[i]; */
+/* for (size_t i = 0; i < tCtof.size(); ++i) { */
+/* // CD Logic: Prefer CTOF, fallback to CND */
+/* if (tCtof[i] != 0.0) res[i] = tCtof[i]; */
+/* else                 res[i] = tCnd[i]; */
                         
-/*                         // Print the exact state of the arrays for this track */
-/*                         if (do_debug) { */
-/*                             std::cout << "  -> Track " << i << ": PID=" << pids[i]  */
-/*                                       << " | tCtof=" << tCtof[i]  */
-/*                                       << " | tCnd=" << tCnd[i]  */
-/*                                       << " | RESULT=" << res[i] << "\n"; */
-/*                         } */
-/*                     } */
-/*                     return res; */
-/*                 }, {rec + ctof + "_time", tCnd, rec + "pid"} */
-/*             ); */
-/*             // Path */
-/*             std::string pCnd = rec + "CND_path_best" + dnw; */
-/*             _rxn.Define(pCnd, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, cnd, "path",  */
-/*                               info::DetectorLayers().at(clas12::CND))); */
+/* // Print the exact state of the arrays for this track */
+/* if (do_debug) { */
+/* std::cout << "  -> Track " << i << ": PID=" << pids[i]  */
+/* << " | tCtof=" << tCtof[i]  */
+/* << " | tCnd=" << tCnd[i]  */
+/* << " | RESULT=" << res[i] << "\n"; */
+/* } */
+/* } */
+/* return res; */
+/* }, {rec + ctof + "_time", tCnd, rec + "pid"} */
+/* ); */
+/* // Path */
+/* std::string pCnd = rec + "CND_path_best" + dnw; */
+/* _rxn.Define(pCnd, util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, cnd, "path",  */
+/* info::DetectorLayers().at(clas12::CND))); */
             
-/*             _rxn.Define(rec + "CD_Path", util::BuildFunctionString("rad::clas12::util::Fallback",  */
-/*                                          {rec + ctof + "_path", pCnd})); */
-/*         } */
+/* _rxn.Define(rec + "CD_Path", util::BuildFunctionString("rad::clas12::util::Fallback",  */
+/* {rec + ctof + "_path", pCnd})); */
+/* } */
 
-/*         // --- FORWARD TAGGER (FT) --- */
-/*         if (!_rxn.ColumnExists(rec + "FT_DetEnergy")) { */
-/*             _rxn.Define(rec + "FT_DetEnergy", rec + ftcal + "_energy"); */
-/*             _rxn.Define(rec + "FT_DeltaEnergy", rec + fthodo + "_energy"); */
-/*             _rxn.Define(rec + "FT_Time", rec + ftcal + "_time"); */
+/* // --- FORWARD TAGGER (FT) --- */
+/* if (!_rxn.ColumnExists(rec + "FT_DetEnergy")) { */
+/* _rxn.Define(rec + "FT_DetEnergy", rec + ftcal + "_energy"); */
+/* _rxn.Define(rec + "FT_DeltaEnergy", rec + fthodo + "_energy"); */
+/* _rxn.Define(rec + "FT_Time", rec + ftcal + "_time"); */
             
-/*             _rxn.Define(rec + "FT_Path", "sqrt(" + rec + ftcal + "_x*" + rec + ftcal + "_x + " +  */
-/*                                                    rec + ftcal + "_y*" + rec + ftcal + "_y + " +  */
-/*                                                    rec + ftcal + "_z*" + rec + ftcal + "_z)"); */
-/*         } */
+/* _rxn.Define(rec + "FT_Path", "sqrt(" + rec + ftcal + "_x*" + rec + ftcal + "_x + " +  */
+/* rec + ftcal + "_y*" + rec + ftcal + "_y + " +  */
+/* rec + ftcal + "_z*" + rec + ftcal + "_z)"); */
+/* } */
 
-/*         // --- BACKWARD ANGLE NEUTRON DETECTOR (BAND) --- */
-/*         if (info::DetectorLayers().count(clas12::BAND) && !_rxn.ColumnExists(rec + "BAND_DetEnergy")) { */
+/* // --- BACKWARD ANGLE NEUTRON DETECTOR (BAND) --- */
+/* if (info::DetectorLayers().count(clas12::BAND) && !_rxn.ColumnExists(rec + "BAND_DetEnergy")) { */
             
-/*             // Assuming layers 1-5 are TOF, and layer 6 is VETO (Standard clas12 BAND configuration) */
-/*             std::vector<int> tofLayers = {1, 2, 3, 4, 5}; */
+/* // Assuming layers 1-5 are TOF, and layer 6 is VETO (Standard clas12 BAND configuration) */
+/* std::vector<int> tofLayers = {1, 2, 3, 4, 5}; */
             
-/*             _rxn.Define(rec + "BAND_DetEnergy",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "energy", tofLayers)); */
+/* _rxn.Define(rec + "BAND_DetEnergy",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "energy", tofLayers)); */
                 
-/*             _rxn.Define(rec + "BAND_DeltaEnergy", util::ColName(rec, band, "energy", 6));  */
+/* _rxn.Define(rec + "BAND_DeltaEnergy", util::ColName(rec, band, "energy", 6));  */
 
-/*             _rxn.Define(rec + "BAND_Time",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "time", tofLayers)); */
+/* _rxn.Define(rec + "BAND_Time",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "time", tofLayers)); */
                 
-/*             _rxn.Define(rec + "BAND_Path",  */
-/*                 util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "path", tofLayers)); */
-/*         } */
+/* _rxn.Define(rec + "BAND_Path",  */
+/* util::BuildLayerFunctionString("rad::clas12::util::Fallback", rec, band, "path", tofLayers)); */
+/* } */
 
-/*         // Map regions directly to the combinatorial candidates */
-/*         const std::vector<std::string> regions = {"FD", "CD", "FT", "BAND"}; */
-/*         const std::vector<std::string> vars = {"DetEnergy", "DeltaEnergy", "Time", "Path", "Sector"}; */
-/*         for (const auto& reg : regions) { */
-/*             for (const auto& v : vars) AutoMapSimple(reg, v);  */
-/*         } */
-/*     } */
+/* // Map regions directly to the combinatorial candidates */
+/* const std::vector<std::string> regions = {"FD", "CD", "FT", "BAND"}; */
+/* const std::vector<std::string> vars = {"DetEnergy", "DeltaEnergy", "Time", "Path", "Sector"}; */
+/* for (const auto& reg : regions) { */
+/* for (const auto& v : vars) AutoMapSimple(reg, v);  */
+/* } */
+/* } */
 
-    inline void CLAS12DetectorBuilder::BuildEventBanks() {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildEventBanks() {
         if(!_rxn.ColumnExists("rec_event_category")) {
             _rxn.SetBranchAlias("REC_Event_category", "rec_event_category");
             _rxn.SetBranchAlias("REC_Event_topology", "rec_event_topology");
@@ -464,7 +471,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildCalorimeter(int subdet, int layer) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildCalorimeter(int subdet, int layer) {
         const std::vector<std::string> cal_vars = {
             "time", "energy", "path", "chi2", "x", "y", "z", "hx", "hy", "hz",
             "lu", "lv", "lw", "du", "dv", "dw", "m2u", "m2v", "m2w", "m3u", "m3v", "m3w", "status", "sector"
@@ -484,7 +492,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildScintillator(int subdet, int layer) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildScintillator(int subdet, int layer) {
         const std::vector<std::string> sci_vars = {
             "time", "energy", "path", "chi2", "x", "y", "z", "hx", "hy", "hz", "sector", "status", "component"
         };
@@ -500,7 +509,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildTracker(int subdet) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildTracker(int subdet) {
         const std::vector<std::string> trk_vars = {"NDF", "sector", "status", "q", "chi2"};
         for (const auto& var : trk_vars) {
             SafeDefineAssoc(bank::Track(), var, subdet);
@@ -508,7 +518,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildTrajectories(int subdet, int layer) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildTrajectories(int subdet, int layer) {
         const std::vector<std::string> traj_vars = {"cx", "cy", "cz", "x", "y", "z", "edge", "path"};
         for (const auto& var : traj_vars) {
             SafeDefineAssoc(bank::Traj(), var, subdet, layer);
@@ -516,7 +527,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildCherenkov(int subdet) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildCherenkov(int subdet) {
         const std::vector<std::string> cher_vars = {"nphe", "time", "path", "sector", "chi2", "x", "y", "z", "dtheta", "dphi", "status"};
         for (const auto& var : cher_vars) {
             SafeDefineAssoc(bank::Cherenkov(), var, subdet);
@@ -524,7 +536,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildForwardTagger(int subdet, int layer) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildForwardTagger(int subdet, int layer) {
         const std::vector<std::string> ft_vars = {"time", "energy", "path", "status", "x", "y", "z", "dx", "dy", "radius", "size", "chi2"};
         for (const auto& var : ft_vars) {
             SafeDefineAssoc(bank::ForwardTagger(), var, subdet, layer);
@@ -532,7 +545,8 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::BuildCovMatrix() {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::BuildCovMatrix() {
         const std::vector<std::string> cov_vars = {
             "C11", "C12", "C13", "C14", "C15", "C22", "C23", "C24", "C25",
             "C33", "C34", "C35", "C44", "C45", "C55"
@@ -545,12 +559,11 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
 
     // --- Private Synchronization Helpers ---
 
-    inline void CLAS12DetectorBuilder::SafeDefineAssoc(const std::string& det, const std::string& item, int subdet, int layer, const std::string& val_bank) {
-        // 1. SAFETY CHECK: Does the raw HIPO column actually exist in this file?
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::SafeDefineAssoc(const std::string& det, const std::string& item, int subdet, int layer, const std::string& val_bank) {
         std::string rawCol = "REC_" + (val_bank.empty() ? det : val_bank) + "_" + item;
-        if (!_rxn.ColumnExists(rawCol)) return; // Silently skip if bank is missing!
-
-        // 2. Proceed with Association
+        if (!_rxn.ColumnExists(rawCol)) return;
+        
         std::string auxBaseName = _detectorNames.DetName(subdet) + "_" + item;
         if (layer >= 0) auxBaseName += "_L" + std::to_string(layer);
         
@@ -560,24 +573,25 @@ inline void CLAS12DetectorBuilder::BuildRegions() {
         }
     }
 
-    inline void CLAS12DetectorBuilder::SafeDefineSimple(const std::string& det, const std::string& item) {
-        // 1. SAFETY CHECK: Does the raw HIPO column actually exist?
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::SafeDefineSimple(const std::string& det, const std::string& item) {
         std::string rawCol = "REC_" + det + "_" + item;
         if (!_rxn.ColumnExists(rawCol)) return;
 
-        // 2. Proceed with Association
         if (!_rxn.ColumnExists(rad::consts::data_type::Rec() + det + "_" + item)) {
             _rxn.DefineSimpleAssociation(det, item);
         }
     }
 
-    inline void CLAS12DetectorBuilder::AutoMap(int subdet, const std::string& item, int layer) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::AutoMap(int subdet, const std::string& item, int layer) {
         std::string auxBaseName = _detectorNames.DetName(subdet) + "_" + item;
         if (layer >= 0) auxBaseName += "_L" + std::to_string(layer);
         AutoMapSimple(auxBaseName, "");
     }
 
-    inline void CLAS12DetectorBuilder::AutoMapSimple(const std::string& prefix, const std::string& item) {
+    template<typename DS_t>
+    inline void CLAS12DetectorBuilder<DS_t>::AutoMapSimple(const std::string& prefix, const std::string& item) {
         std::string auxBaseName = item.empty() ? prefix : prefix + "_" + item;
         std::string recType = rad::consts::data_type::Rec();
         std::string baseCol = recType + auxBaseName; 

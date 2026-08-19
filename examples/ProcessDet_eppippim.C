@@ -16,7 +16,7 @@ void ProcessDet_eppippim() {
   
   using namespace rad;
   using namespace rad::consts::data_type; 
-  using Reaction = rad::clas12::CLAS12Reaction;
+  using Reaction = rad::clas12::CLAS12Reaction<RHipoDS>;
   using Processor = KinematicsProcElectro;
 
   gBenchmark->Start("df");

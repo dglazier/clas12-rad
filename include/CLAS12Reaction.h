@@ -13,11 +13,11 @@
 #include "ElectroIonReaction.h"
 #include "CLAS12Utilities.h"
 #include "CLAS12Names.h"
-#include "clas12defs.h"
+//#include "clas12defs.h"
 #include "ReactionUtilities.h"
 #include "Constants.h"
 #include "ParticleInjector.h" 
-#include "hipo4/RHipoDS.hxx"
+#include "hipo4/RIguanaDS.hxx"
 
 #include <memory>
 #include <string>
@@ -36,14 +36,25 @@ namespace clas12 {
     // CLASS DEFINITION
     // =================================================================================
 
+    template<typename DS_t = RHipoDS>
     class CLAS12Reaction : public rad::ElectroIonReaction {
+
+      private:
+        DS_t* _customDS = nullptr; // Our hijacked backdoor pointer
+
+        // Private delegating constructor to intercept the pointer safely
+        CLAS12Reaction(DS_t* ds_ptr) 
+            : ElectroIonReaction{ ROOT::RDataFrame{std::unique_ptr<DS_t>(ds_ptr)} }, 
+              _customDS{ds_ptr} {}
+      
     public:
         CLAS12Reaction(const std::string_view treeName, const std::string_view fileNameGlob);
         CLAS12Reaction(const std::string_view treeName, const std::vector<std::string>& filenames);
+        CLAS12Reaction(const std::string_view treeName, const ROOT::RVec<std::string>& filenames); 
         CLAS12Reaction(ROOT::RDataFrame rdf);
         CLAS12Reaction(ROOT::RDF::RNode rdf);
 
-        // --- Setup Methods ---
+       // --- Setup Methods ---
         
         /** * @brief Enables Forward Tagger Based (FTB) PID and kinematics resolution. */
         void UseFTB(bool use = true);
@@ -69,7 +80,17 @@ namespace clas12 {
 
       /** * @brief Dynamically discovers and prints all columns for the requested HIPO banks. */
       void InspectBanks(const std::vector<std::string>& bankPrefixes, int nEvents = 5);
-
+      /**
+       * @brief Retrieves the underlying data source pointer.
+       * @details Uses our stored poiner
+       */
+      DS_t* GetDataSource() {
+            if (!_customDS) {
+                throw std::runtime_error("CLAS12Reaction::GetDataSource - Data source not initialized via hijacking!");
+            }
+            return _customDS;
+        }
+      
     private:
       Int_t _idxBeamEle = 0;       
       Int_t _idxBeamIon = 1;
@@ -83,18 +104,36 @@ namespace clas12 {
     // IMPLEMENTATION
     // =================================================================================
 
-    inline CLAS12Reaction::CLAS12Reaction(const std::string_view treeName, const std::string_view fileNameGlob)
-        : ElectroIonReaction{ ROOT::RDataFrame{std::move(std::make_unique<RHipoDS>(fileNameGlob))} } {}
+ // =================================================================================
+    // IMPLEMENTATION
+    // =================================================================================
 
-    inline CLAS12Reaction::CLAS12Reaction(const std::string_view treeName, const std::vector<std::string>& filenames)
-        : ElectroIonReaction{ ROOT::RDataFrame{std::move(std::make_unique<RHipoDS>(filenames))} } {}
+    template<typename DS_t>
+    inline CLAS12Reaction<DS_t>::CLAS12Reaction(const std::string_view treeName, const std::string_view fileNameGlob)
+        : CLAS12Reaction(new DS_t(fileNameGlob)) {} // Delegate to the private hijacker
 
-    inline CLAS12Reaction::CLAS12Reaction(ROOT::RDataFrame rdf) : ElectroIonReaction{rdf} {}
-    inline CLAS12Reaction::CLAS12Reaction(ROOT::RDF::RNode rdf) : ElectroIonReaction{rdf} {}
+    template<typename DS_t>
+    inline CLAS12Reaction<DS_t>::CLAS12Reaction(const std::string_view treeName, const std::vector<std::string>& filenames)
+        : CLAS12Reaction(new DS_t(filenames)) {} // Delegate to the private hijacker
   
-    inline void CLAS12Reaction::UseFTB(bool use) { _useFTB = use; }
+  template<typename DS_t>
+  inline CLAS12Reaction<DS_t>::CLAS12Reaction(const std::string_view treeName, const ROOT::RVec<std::string>& filenames)
+    : CLAS12Reaction(new DS_t(std::vector<std::string>(filenames.begin(), filenames.end()))) {}
 
-inline void CLAS12Reaction::SetBeamEnergy(double val) {
+  template<typename DS_t>
+  inline CLAS12Reaction<DS_t>::CLAS12Reaction(ROOT::RDataFrame rdf) 
+        : ElectroIonReaction{rdf}, _customDS{nullptr} {}
+    
+    template<typename DS_t>
+    inline CLAS12Reaction<DS_t>::CLAS12Reaction(ROOT::RDF::RNode rdf) 
+        : ElectroIonReaction{rdf}, _customDS{nullptr} {}
+
+  
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::UseFTB(bool use) { _useFTB = use; }
+
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::SetBeamEnergy(double val) {
         // Bypass the base class helper methods to avoid redundant index registration.
         // Directly set the protected kinematic members (just like ePICReaction does).
         _p4el_beam = PxPyPzMVector(0.0, 0.0, val, consts::M_ele());
@@ -102,7 +141,8 @@ inline void CLAS12Reaction::SetBeamEnergy(double val) {
 	_useBeamsFromMC = false;
     }
 
-inline void CLAS12Reaction::SetupReconstructed(Bool_t isEnd) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::SetupReconstructed(Bool_t isEnd) {
         AddType(Rec());
         DefineBeamComponents(Rec()); 
         SetBeamElectronIndex(_idxBeamEle, Rec());
@@ -167,66 +207,10 @@ inline void CLAS12Reaction::SetupReconstructed(Bool_t isEnd) {
 
         Define(Rec() + "n", Rec() + "px.size()");
         rad::util::CountParticles(this, Rec());
-    } //    inline void CLAS12Reaction::SetupReconstructed(Bool_t isEnd) {
-    //     AddType(Rec());
-    //     DefineBeamComponents(Rec()); 
-    // 	SetBeamElectronIndex(_idxBeamEle, Rec());
-    //     SetBeamIonIndex(_idxBeamIon, Rec());
+    } 
 
-    //     rad::ParticleInjector injector(this);
-    //     // Style Guide: Double_t for values, Int_t for PIDs/Indices
-    //     ROOT::RVec<std::string> suffixes = {
-    //         "double px", "double py", "double pz", "double m", 
-    //         "int pid", "int status", "double beta", "double chi2pid", "double vt"
-    //     };
-    //     if (_truthMatched) { suffixes.push_back("int match_id"); }
-    //     injector.DefineParticleInfo(suffixes);
-
-    //     std::string bEle = Rec() + consts::BeamEle() + "_src_";
-    //     std::string bIon = Rec() + consts::BeamIon() + "_src_";
-
-    //     // 1. Inject Beams (Indices 0 and 1)
-    //     ROOT::RVec<std::string> ele_src = {
-    //         bEle+"px", bEle+"py", bEle+"pz", bEle+"m", bEle+"pid", 
-    //         "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}"
-    //     };
-    //     ROOT::RVec<std::string> ion_src = {
-    //         bIon+"px", bIon+"py", bIon+"pz", bIon+"m", bIon+"pid", 
-    //         "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}"
-    //     };
-    //     if(_truthMatched) { ele_src.push_back("rad::Indices_t{0}"); ion_src.push_back("rad::Indices_t{1}"); }
-        
-    //     injector.AddSource(Rec(), ele_src);
-    //     injector.AddSource(Rec(), ion_src);
-
-    //     // 2. Prepare HIPO tracks (Starting at index 2)
-    //     if (!ColumnExists("REC_Particle_m")) {
-    //         Define("REC_Particle_m", "rad::util::AssignMasses(REC_Particle_pid)");
-    //     }
-        
-    //     ROOT::RVec<std::string> track_src = {
-    //         "REC_Particle_px", "REC_Particle_py", "REC_Particle_pz", "REC_Particle_m", 
-    //         "REC_Particle_pid", "REC_Particle_status", "REC_Particle_beta", "REC_Particle_chi2pid", "REC_Particle_vt"
-    //     };
-        
-    //     // Handle FTB Preferred Banks
-    //     if (_useFTB && ColumnExists("RECFT_Particle_pid")) {
-    //         Define("REC_Particle_pid_ftb", "rad::clas12::util::MergeFTB(REC_Particle_pid, RECFT_Particle_pid)");
-    //         Define("REC_Particle_beta_ftb", "rad::clas12::util::MergeFTB(REC_Particle_beta, RECFT_Particle_beta)");
-    //         track_src[4] = "REC_Particle_pid_ftb";
-    //         track_src[6] = "REC_Particle_beta_ftb";
-    //     }
-    //     if (_truthMatched) { track_src.push_back(Rec() + "match_id_raw" + DoNotWriteTag()); }
-
-    //     injector.AddSource(Rec(), track_src);
-    //     injector.CreateUnifiedVectors();
-
-    // 	Define(Rec() + "n", Rec() + "px.size()");
-	
-    // 	rad::util::CountParticles(this, Rec());
-    // }
-
-    inline void CLAS12Reaction::SetupTruth(Bool_t isEnd) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::SetupTruth(Bool_t isEnd) {
         AddType(Truth());
         DefineBeamComponents(Truth());
 	SetBeamElectronIndex(_idxBeamEle, Truth());
@@ -249,7 +233,8 @@ inline void CLAS12Reaction::SetupReconstructed(Bool_t isEnd) {
         rad::util::CountParticles(this, Truth());
     }
 
-    inline void CLAS12Reaction::SetupMatching(Bool_t isEnd) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::SetupMatching(Bool_t isEnd) {
         _truthMatched = true;
 
         // Map raw HIPO match (Rec track -> MC track) and apply +2 offset for unified arrays
@@ -273,7 +258,8 @@ inline void CLAS12Reaction::SetupReconstructed(Bool_t isEnd) {
         DefineTruePID(Rec());
     }
 
-inline void CLAS12Reaction::DefineDetectorAssociation(const std::string& det, const std::string& item, int subdet, int layer, const std::string& val_bank) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::DefineDetectorAssociation(const std::string& det, const std::string& item, int subdet, int layer, const std::string& val_bank) {
         std::string det_col = "REC_" + det + "_";
         std::string val_col = "REC_" + (val_bank.empty() ? det : val_bank) + "_"; 
         
@@ -298,7 +284,8 @@ inline void CLAS12Reaction::DefineDetectorAssociation(const std::string& det, co
         }
     }
 
-    inline void CLAS12Reaction::DefineSimpleAssociation(const std::string& det, const std::string& item) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::DefineSimpleAssociation(const std::string& det, const std::string& item) {
         std::string det_col = "REC_" + det + "_";
         std::string outName = Rec() + det + "_" + item; 
 
@@ -311,7 +298,8 @@ inline void CLAS12Reaction::DefineDetectorAssociation(const std::string& det, co
         Define(outName, func_call);
     }
   
-inline void CLAS12Reaction::InspectBanks(const std::vector<std::string>& bankPrefixes, int nEvents) {
+    template<typename DS_t>
+    inline void CLAS12Reaction<DS_t>::InspectBanks(const std::vector<std::string>& bankPrefixes, int nEvents) {
         std::cout << "\n==================================================================\n";
         std::cout << "=== Inspecting Banks (First " << nEvents << " Events) ===\n";
         
@@ -347,6 +335,7 @@ inline void CLAS12Reaction::InspectBanks(const std::vector<std::string>& bankPre
             }
         }
         std::cout << "==================================================================\n\n";
-    } 
+    }
+  
 } // namespace clas12
 } // namespace rad
