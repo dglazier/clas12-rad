@@ -173,7 +173,7 @@ namespace clas12 {
         injector.AddSource(Rec(), ele_src);
         injector.AddSource(Rec(), ion_src);
 
-        // --- FIX: RESOLVE FINAL PID FIRST ---
+        // --- RESOLVE FINAL PID FIRST ---
         std::string pid_col = "REC_Particle_pid";
         std::string beta_col = "REC_Particle_beta";
 
@@ -184,7 +184,7 @@ namespace clas12 {
             beta_col = "REC_Particle_beta_ftb";
         }
 
-        // --- FIX: ASSIGN MASSES BASED ON FINAL RESOLVED PID ---
+        // --- ASSIGN MASSES BASED ON FINAL RESOLVED PID ---
         std::string m_col = Rec() + "m_pdg" + DoNotWriteTag();
         Define(m_col, "rad::util::AssignMasses(" + pid_col + ")");
 

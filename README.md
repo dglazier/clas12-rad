@@ -24,6 +24,10 @@ To run on ifarm it is simplest to use my build
       setenv ROOT_INCLUDE_PATH ${RAD}/include:${CLAS12RAD}/include:${HIPO}/include
       setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${HIPO}/lib
 
+If we wish to use qadb we also need
+
+      setenv ROOT_INCLUDE_PATH ${QADB}/srcC/include:${QADB}/srcC/rapidjson/include:${ROOT_INCLUDE_PATH}
+
 To install on laptop etc, just download the code from git and add the path to ROOT_INCLUDE_PATH
 If you do not have the base rad code already installed you can add it via a submodule
 
