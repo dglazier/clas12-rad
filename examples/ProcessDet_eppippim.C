@@ -1,6 +1,6 @@
 #include "AnalysisManager.h"
 #include "CLAS12Reaction.h"
-#include "CLAS12DetectorBuilder.h" // New inclusion
+#include "CLAS12DetectorBuilder.h"
 #include "clas12defs.h"
 #include "KinematicsProcElectro.h"
 #include "ElectronScatterKinematics.h"
@@ -24,18 +24,19 @@ void ProcessDet_eppippim() {
   // =================================================================================
   // 1. SETUP & MATCHING
   // =================================================================================
-  std::string filename = "~/Jlab/clas12/data/simulation/RhoFeb24/rho-7221-9*.hipo";
+   std::string filename = "~/Jlab/clas12/data/simulation/RhoFeb24/rho-7221-9*.hipo";
+  //std::string filename = "~/Jlab/clas12/data/";
   
   AnalysisManager<Reaction,Processor> mgr{"Rho", "events", filename};
-  mgr.SetOutputDir("histos");
-  
+  mgr.SetOutputDir("histos_bench");
+   
   auto& clas12_df = mgr.Reaction();
 
-  // clas12_df.InspectBanks({"MC_Lund", "REC_Particle"}, 3);
+  clas12_df.InspectBanks({"MC_Lund", "REC_Particle"}, 3);
 
   // Define Beam Kinematics
   clas12_df.SetBeamEnergy(10.4);
-  
+ 
 
   // Turn on FTB Ambiguity Resolution (Prefers RECFT over REC)
   clas12_df.UseFTB(); 
@@ -49,9 +50,21 @@ void ProcessDet_eppippim() {
   const int Role_PiP     = 0 + 2; 
   const int Role_PiM     = 1 + 2; 
 
+  // 1. Define the CLAS12 Forward Detector Lambda filter for ANY pion (+/- 211)
+  auto FD_Pip_Filter = [](const ROOT::RVecI& pid, const ROOT::RVecI& region) {
+    // Return indices where the track is a pion AND its region matches the FD flag
+     return ROOT::VecOps::Nonzero((pid == 211)&&(region == rad::clas12::FD));
+  };
+
+  // auto FD_Pim_Filter = [](const ROOT::RVecI& pid, const ROOT::RVecI& region) {
+  //   // Return indices where the track is a pion AND its region matches the FD flag
+  //   return ROOT::VecOps::Nonzero((pid == -211)&&(region == rad::clas12::FD) );
+  // };
+ 
+  
   clas12_df.SetParticleCandidates(consts::ScatEle(), Role_ScatEle, rad::index::FilterIndices(11), {"rec_pid"});
-  clas12_df.SetParticleCandidates("pip", Role_PiP, rad::index::FilterIndices(211), {"rec_pid"}); 
-  clas12_df.SetParticleCandidates("pim", Role_PiM, rad::index::FilterIndices(-211), {"rec_pid"}); 
+  clas12_df.SetParticleCandidates("pip", Role_PiP, FD_Pip_Filter, {"rec_pid", "rec_region"}); 
+  clas12_df.SetParticleCandidatesExpr("pim",Role_PiM,"rec_pid == -211 && rec_region == rad::clas12::FD");
   clas12_df.SetParticleCandidates("proton", Role_Proton, rad::index::FilterIndices(2212), {"rec_pid"}); 
   // clas12_df.SetParticleCandidates(consts::ScatEle(), Role_ScatEle, rad::index::FilterIndices(11), {"rec_true_pid"});
   // clas12_df.SetParticleCandidates("pip", Role_PiP, rad::index::FilterIndices(211), {"rec_true_pid"}); 
@@ -130,9 +143,9 @@ void ProcessDet_eppippim() {
                100, 0, 10, 100, 0, 10, 
                ScatEle() + "_pmag", ScatEle() + "_FT_DetEnergy");
 
-    h.Create2D("hProtonPvFDTime", "P_{p} vs FD Best Time", 
-               100, 0, 10, 100, 0, 50, 
-               "proton_pmag", "proton_FD_Time");
+    // h.Create2D("hProtonPvFDTime", "P_{p} vs FD Best Time", 
+    //            100, 0, 10, 100, 0, 50, 
+    //            "proton_pmag", "proton_FD_Time");
   };
  
   // rad::rdf::PrintParticles(clas12_df, Rec());
@@ -140,6 +153,10 @@ void ProcessDet_eppippim() {
   //mgr.ConfigureHistograms(histogram_recipe);
   mgr.Snapshot({consts::TruthMatchedCombi()});
 
+
+  //Print some configuration diagnostics
+  mgr.PrintDiagnostics(2); //0=silent, 1 = Verifies data streams and input types, 2 = Dumps all 66+ variables, alias maps, and calculations
+  
   // =================================================================================
   // 3. RUN EVENT LOOP
   // =================================================================================

@@ -141,7 +141,7 @@ namespace clas12 {
 	_useBeamsFromMC = false;
     }
 
-    template<typename DS_t>
+template<typename DS_t>
     inline void CLAS12Reaction<DS_t>::SetupReconstructed(Bool_t isEnd) {
         AddType(Rec());
         DefineBeamComponents(Rec()); 
@@ -150,23 +150,28 @@ namespace clas12 {
 
         rad::ParticleInjector injector(this);
         
+        // 1. ADD NEW VARIABLES TO UNIFIED SUFFIXES
         ROOT::RVec<std::string> suffixes = {
             "double px", "double py", "double pz", "double m", 
-            "int pid", "int status", "double beta", "double chi2pid", "double vt"
+            "int pid", "int status", "double beta", "double chi2pid", "double vt",
+            "double vx", "double vy", "double vz", "int region"
         };
         if (_truthMatched) { suffixes.push_back("int match_id"); }
         injector.DefineParticleInfo(suffixes);
 
+        // 2. PAD BEAM SOURCES WITH DUMMY VALUES FOR NEW VARIABLES
         std::string bEle = Rec() + consts::BeamEle() + "_src_";
         std::string bIon = Rec() + consts::BeamIon() + "_src_";
 
         ROOT::RVec<std::string> ele_src = {
             bEle+"px", bEle+"py", bEle+"pz", bEle+"m", bEle+"pid", 
-            "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}"
+            "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}",
+            "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}", "rad::Indices_t{0}"
         };
         ROOT::RVec<std::string> ion_src = {
             bIon+"px", bIon+"py", bIon+"pz", bIon+"m", bIon+"pid", 
-            "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}"
+            "rad::Indices_t{0}", "rad::RVecResultType{1.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}",
+            "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}", "rad::RVecResultType{0.0}", "rad::Indices_t{0}"
         };
         if(_truthMatched) { ele_src.push_back("rad::Indices_t{0}"); ion_src.push_back("rad::Indices_t{1}"); }
         
@@ -188,16 +193,36 @@ namespace clas12 {
         std::string m_col = Rec() + "m_pdg" + DoNotWriteTag();
         Define(m_col, "rad::util::AssignMasses(" + pid_col + ")");
 
+        // --- EXTRACT REGION FROM STATUS ---
+        if (!ColumnExists("REC_Particle_region")) {
+            Define("REC_Particle_region",
+                [](const ROOT::RVec<short>& status) {
+                    ROOT::RVecI region(status.size());
+                    for (size_t i = 0; i < status.size(); ++i) {
+                        // Div/Mult by 1000 strips the lower scint/cal digits 
+                        region[i] = (std::abs(status[i]) / 1000) * 1000;
+                    }
+                    return region;
+                },
+                {"REC_Particle_status"}
+            );
+        }
+
+        // 3. MAP THE RAW BANKS TO THE INJECTOR
         ROOT::RVec<std::string> track_src = {
             "REC_Particle_px", 
             "REC_Particle_py", 
             "REC_Particle_pz", 
-            m_col,  // <--- Uses the perfectly synchronized PDG mass!
+            m_col,  
             pid_col, 
             "REC_Particle_status", 
             beta_col, 
             "REC_Particle_chi2pid", 
-            "REC_Particle_vt"
+            "REC_Particle_vt",
+            "REC_Particle_vx",
+            "REC_Particle_vy",
+            "REC_Particle_vz",
+            "REC_Particle_region"
         };
         
         if (_truthMatched) { track_src.push_back(Rec() + "match_id_raw" + DoNotWriteTag()); }
@@ -323,7 +348,7 @@ namespace clas12 {
             std::cout << "\n>>> DUMPING BANK: " << prefix << " <<<\n";
 
             // Chunk the columns into groups of 5 to completely bypass ROOT's display truncation
-            const size_t chunkSize = 5;
+            const size_t chunkSize = 4;
             for (size_t i = 0; i < bank_cols.size(); i += chunkSize) {
                 std::vector<std::string> chunk;
                 for (size_t j = i; j < i + chunkSize && j < bank_cols.size(); ++j) {
