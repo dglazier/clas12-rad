@@ -1,12 +1,15 @@
+// 1. Give Cling the definitions first in the correct order
+#include "hipo4/RIguanaDS.hxx"
+#include "hipo4/ThreadedAlgo.hxx"
+#include "AnalysisManager.h"
+#include "CLAS12Reaction.h"
+#include "KinematicsProcElectro.h"
+
+// 2. Load the libraries now that the AST is populated
 R__LOAD_LIBRARY(libhipo4)
 R__LOAD_LIBRARY(libHipoDataFrame)
 R__LOAD_LIBRARY(libIguanaServices)
 R__LOAD_LIBRARY(libIguanaAlgorithms)
-
-#include "AnalysisManager.h"
-#include "CLAS12Reaction.h"
-#include "KinematicsProcElectro.h"
-#include "hipo4/ThreadedAlgo.hxx"
 
 #include <TCanvas.h>
 #include <TStyle.h>
@@ -61,7 +64,7 @@ void ProcessIguana() {
     algo_inc.Start();
 
  
-    // Cache indices for extreme performance in the hot loop
+    // Cache indices for performance in the hot loop
     int i_part = ds->GetBankIndex("REC::Particle");
     int i_conf = ds->GetBankIndex("RUN::config");
     int i_cal  = ds->GetBankIndex("REC::Calorimeter");
@@ -156,7 +159,7 @@ void ProcessIguana() {
     c1->cd(3); hy->DrawCopy();
     c1->cd(4); hvz->DrawCopy();
     c1->cd(5); hdeltaP->DrawCopy("COLZ");
-   gBenchmark->Stop("clas12rad");
+    gBenchmark->Stop("clas12rad");
     gBenchmark->Print("clas12rad");
 
  
