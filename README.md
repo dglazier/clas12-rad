@@ -11,7 +11,7 @@ The framework is **header-only** and runs directly within ROOT script executionâ
 ## ðŸ“š Documentation & Reference
 
 * **Core RAD Repository:** [github.com/dglazier/rad](https://github.com/dglazier/rad)
-  * Consult the general core documentation in `docs/`, particularly [`docs/FAQs.md`](https://github.com/dglazier/rad/blob/master/docs/FAQs.md), for foundational concepts regarding combinatorics, memory safety, and processor recipes.
+  * Consult the general core documentation in `docs/`, particularly [`docs/FAQs.md`](https://github.com/dglazier/rad/blob/master/docs/FAQs.md) and [`docs/Combis.md`](https://github.com/dglazier/rad/blob/master/docs/Combis.md), for foundational concepts regarding combinatorics, memory safety, and processor recipes.
 * **CLAS12 Extension Repository:** [github.com/dglazier/clas12-rad](https://github.com/dglazier/clas12-rad)
   * [`docs/DetectorInfoMap.md`](https://github.com/dglazier/clas12-rad/blob/master/docs/DetectorInfoMap.md): Complete mapping reference of all synthesized CLAS12 detector layers, compound regions (FD, CD, FT), and reconstructed hit variables.
   * [`docs/FAQs.md`](https://github.com/dglazier/clas12-rad/blob/master/docs/FAQs.md): Practical recipes and frequently asked questions developed specifically for CLAS12 analysis patterns (such as status/region filtering and detector pass-throughs).
