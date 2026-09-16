@@ -3,4 +3,4 @@
 	url = https://github.com/dglazier/rad.git
 [submodule "hipo"]
 	path = hipo
-	url = https://github.com/gavalian/hipo
+	url = https://code.jlab.org/hallb/clas12/hipo-cpp
